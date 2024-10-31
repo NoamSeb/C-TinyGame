@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using TreeEditor;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -11,12 +11,14 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] private GameObject _IncantationPrefab;
     [SerializeField] private GameObject _AttackZone;
+    int _CoinsCount;
+    [SerializeField] TextMeshProUGUI _CoinsTextUI;
 
     [Space] [SerializeField] InputActionReference _moveInput;
     [SerializeField] InputActionReference _attackInput;
     [SerializeField] InputActionReference _magicalAttackInput;
-
-    public event Action OnMoveStarted;
+    
+    public event Action OnCollectCoins;
     private Vector2 _joystick;
     Vector3 _movement;
 
@@ -27,8 +29,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] Mana _mana;
     [SerializeField] Camera _camera;
     [SerializeField] Animator _animator;
-
-    bool _IsSprinting;
+    
     private bool _IsMoving;
 
     Coroutine _UseStaminaCoroutine;
@@ -43,7 +44,7 @@ public class PlayerController : MonoBehaviour
         _animator = GetComponent<Animator>();
         _mana = GetComponent<Mana>();
     }
-
+    
     void FixedUpdate()
     {
         var forward = _camera.transform.forward;
@@ -75,6 +76,9 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+        OnCollectCoins += UpdateCoinsText;
+        _CoinsTextUI.text = "0";
+
         #region Move Event
 
         _moveInput.action.started += StartMove;
@@ -120,17 +124,15 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Read Player Input
+    /// Read Player Inputs
     /// </summary>
     /// <param name="obj"></param>
-
     #region Input reading
 
     #region Movement
 
     void StartMove(InputAction.CallbackContext obj)
     {
-        OnMoveStarted?.Invoke();
         _IsMoving = true;
     }
 
@@ -207,5 +209,20 @@ public class PlayerController : MonoBehaviour
         {
             StopCoroutine(_GainStaminaCoroutine);
         }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Coins"))
+        {
+            _CoinsCount += 10;
+            OnCollectCoins?.Invoke();
+            Destroy(other.gameObject);
+        }
+    }
+    
+    private void UpdateCoinsText()
+    {
+        _CoinsTextUI.text = _CoinsCount.ToString();
     }
 }
